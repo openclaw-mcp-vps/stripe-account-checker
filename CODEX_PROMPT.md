@@ -4,30 +4,32 @@ Build a complete, production-ready Next.js 15 App Router application.
 
 PROJECT: stripe-account-checker
 HEADLINE: Check if your business will trigger Stripe bans
-WHAT: None
-WHY: None
-WHO PAYS: None
+WHAT: Analyzes your business model, transaction patterns, and risk factors against Stripe's terms of service to predict account suspension likelihood. Provides a risk score and specific recommendations to avoid bans before you integrate.
+WHY: Stripe account suspensions can kill startups overnight with no warning or appeal process. With payment processing becoming stricter post-COVID, founders need to know their risk before building their entire business on a platform that might ban them.
+WHO PAYS: Early-stage SaaS founders and fintech entrepreneurs who haven't integrated payments yet, or existing businesses considering switching to Stripe. Especially valuable for high-risk verticals like marketplaces, crypto, or international businesses.
 NICHE: fintech-tools
 PRICE: $$19/mo
 
 ARCHITECTURE SPEC:
-A Next.js web app that analyzes business data against Stripe's risk policies to predict potential account restrictions. Users input business details, and the system provides a risk assessment with actionable recommendations to avoid bans.
+A Next.js application with a multi-step risk assessment form that analyzes business models against Stripe's ToS using a scoring algorithm. Features user authentication, report generation, and subscription management via Lemon Squeezy.
 
 PLANNED FILES:
 - app/page.tsx
-- app/check/page.tsx
+- app/assessment/page.tsx
+- app/report/[id]/page.tsx
 - app/dashboard/page.tsx
-- app/api/analyze/route.ts
+- app/api/assessment/route.ts
 - app/api/webhooks/lemonsqueezy/route.ts
-- components/RiskAnalyzer.tsx
+- components/AssessmentForm.tsx
 - components/RiskReport.tsx
-- components/PaymentButton.tsx
-- lib/stripe-risk-rules.ts
-- lib/lemonsqueezy.ts
+- components/PricingCard.tsx
+- lib/stripe-rules.ts
+- lib/risk-calculator.ts
 - lib/auth.ts
-- types/risk-assessment.ts
+- lib/lemonsqueezy.ts
+- prisma/schema.prisma
 
-DEPENDENCIES: next, tailwindcss, @lemonsqueezy/lemonsqueezy.js, next-auth, prisma, @prisma/client, zod, lucide-react, recharts
+DEPENDENCIES: next, tailwindcss, prisma, @prisma/client, next-auth, @lemonsqueezy/lemonsqueezy.js, zod, react-hook-form, @hookform/resolvers, recharts, lucide-react, clsx, tailwind-merge
 
 REQUIREMENTS:
 - Next.js 15 with App Router (app/ directory)
@@ -35,7 +37,7 @@ REQUIREMENTS:
 - Tailwind CSS v4
 - shadcn/ui components (npx shadcn@latest init, then add needed components)
 - Dark theme ONLY — background #0d1117, no light mode
-- Lemon Squeezy checkout overlay for payments
+- Stripe Payment Link for payments (hosted checkout — use the URL directly as the Buy button href)
 - Landing page that converts: hero, problem, solution, pricing, FAQ
 - The actual tool/feature behind a paywall (cookie-based access after purchase)
 - Mobile responsive
@@ -55,9 +57,13 @@ REQUIREMENTS:
   to package.json dependencies and re-run npm install + npm run build until it passes.
 
 ENVIRONMENT VARIABLES (create .env.example):
-- NEXT_PUBLIC_LEMON_SQUEEZY_STORE_ID
-- NEXT_PUBLIC_LEMON_SQUEEZY_PRODUCT_ID
-- LEMON_SQUEEZY_WEBHOOK_SECRET
+- NEXT_PUBLIC_STRIPE_PAYMENT_LINK  (full URL, e.g. https://buy.stripe.com/test_XXX)
+- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY  (pk_test_... or pk_live_...)
+- STRIPE_WEBHOOK_SECRET  (set when webhook is wired)
+
+BUY BUTTON RULE: the Buy button's href MUST be `process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK`
+used as-is — do NOT construct URLs from a product ID, do NOT prepend any base URL,
+do NOT wrap it in an embed iframe. The link opens Stripe's hosted checkout directly.
 
 After creating all files:
 1. Run: npm install

@@ -1,35 +1,25 @@
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import { z } from "zod";
-import { hasAccessCookie } from "@/lib/lemonsqueezy";
+import { cookies } from "next/headers";
 
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  accessToken: z.string().min(10)
-});
+export const PAID_COOKIE_NAME = "sac_paid";
+export const PAID_COOKIE_VALUE = "1";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
-  providers: [
-    Credentials({
-      name: "Email Access Token",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        accessToken: { label: "Access token", type: "password" }
-      },
-      authorize: async (credentials) => {
-        const parsed = credentialsSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+export async function hasPaidAccess() {
+  const store = await cookies();
+  return store.get(PAID_COOKIE_NAME)?.value === PAID_COOKIE_VALUE;
+}
 
-        const hasAccess = await hasAccessCookie();
-        if (!hasAccess) return null;
+export async function grantPaidAccess(maxAgeDays = 30) {
+  const store = await cookies();
+  store.set(PAID_COOKIE_NAME, PAID_COOKIE_VALUE, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * maxAgeDays
+  });
+}
 
-        return {
-          id: parsed.data.email,
-          email: parsed.data.email,
-          name: "Paid User"
-        };
-      }
-    })
-  ]
-});
+export async function revokePaidAccess() {
+  const store = await cookies();
+  store.delete(PAID_COOKIE_NAME);
+}
